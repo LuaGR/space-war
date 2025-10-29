@@ -1,0 +1,16 @@
+#Archivos de caché de Python
+
+pycache/
+*.pyc
+
+#Carpetas de entorno virtual
+
+venv/
+.venv/
+env/
+.env/
+
+#Archivos específicos del SO
+
+.DS_Store
+Thumbs.db
