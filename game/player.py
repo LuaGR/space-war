@@ -1,6 +1,6 @@
 import pygame
 import sys
-
+from main import SCREEN_WIDTH,SCREEN_HEIGHT
 class Player:
     def __init__(self):
         self.move_left = False
@@ -10,6 +10,7 @@ class Player:
         self.x = 400
         self.y = 300
         self.speed = 5
+        self.size = 50
     
     def handle_movement(self, event):
         if event.type == pygame.KEYDOWN:
@@ -41,6 +42,18 @@ class Player:
             self.y -= self.speed
         if self.move_down:
             self.y += self.speed
+            
+        
+        if self.x < 0:
+            self.x = 0 
+        elif self.x > SCREEN_WIDTH - self.size:
+            self.x = SCREEN_WIDTH - self.size 
+
+    
+        if self.y < 0:
+            self.y = 0 
+        elif self.y > SCREEN_HEIGHT - self.size:
+            self.y = SCREEN_HEIGHT - self.size 
 
     def draw(self, screen):
-        pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 50, 50))
+        pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.size, self.size))
