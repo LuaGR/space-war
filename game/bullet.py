@@ -18,3 +18,4 @@ if bullet_visible:
         if event.type == pygame.K_SPACE:
             shoot(jugador_x, bullet_y)
             bullet_y -= bullet_y_mov
+            
