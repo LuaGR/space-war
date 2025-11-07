@@ -17,21 +17,35 @@ Nuestra arquitectura se basa en tres principios clave:
 2.  **Modularidad:** Cada "cosa" en el juego debe tener su propio archivo (`player.py`, `enemy.py`). Esto nos permite trabajar en paralelo sin pisarnos.
 3.  **Consistencia:** Seguiremos los mismos estándares de nombrado (prefijos, commits en inglés) y el mismo flujo de trabajo (Trello -\> Branch -\> PR) sin excepción.
 
-## 2. Stack Tecnológico y Justificación
+## 2. Paradigmas y Stack Tecnológico
 
-### **Python 3.x** - Lenguaje de programación principal
+### 2.1. Paradigmas de Programación Utilizados
+
+El diseño del proyecto "Space War" se apoya principalmente en los siguientes paradigmas:
+
+- **Programación Orientada a Objetos (POO):**
+  Cada entidad principal del juego (jugador, enemigo, bala) se implementa como una clase independiente, encapsulando atributos y comportamientos. Esto facilita la modularidad, la reutilización y el mantenimiento del código.
+
+- **Programación Imperativa:**
+  El flujo principal del juego (game loop) y la gestión de eventos siguen un enfoque imperativo, donde se describen explícitamente los pasos a ejecutar para actualizar el estado del juego y renderizar la pantalla.
+
+> Nota: Se evita deliberadamente el uso de paradigmas más avanzados (como la programación funcional o basada en componentes) para priorizar la claridad y el aprendizaje de los miembros menos experimentados.
+
+### 2.2. Stack Tecnológico y Justificación
+
+#### **Python 3.x** - Lenguaje de programación principal
 Su sintaxis limpia y fácil lectura lo hacen ideal para un equipo con habilidades mixtas, especialmente para los 2 miembros que están aprendiendo desde cero.
 
-### **Pygame** - Librería para desarrollo de juegos
+#### **Pygame** - Librería para desarrollo de juegos
 Es la librería estándar de Python para juegos 2D. Proporciona módulos esenciales listos para usar (ventana, gráficos, sonido, eventos de teclado) que nos permiten enfocarnos en la *lógica* del juego y no en crear un motor gráfico desde cero.
 
-### **Git** - Sistema de control de versiones
+#### **Git** - Sistema de control de versiones
 Esencial para el trabajo colaborativo. Nos permite rastrear cambios, experimentar en ramas sin romper el juego principal y fusionar el trabajo de 6 personas de forma ordenada.
 
-### **GitHub** - Plataforma de hosting de repositorios
+#### **GitHub** - Plataforma de hosting de repositorios
 Es el "servidor central" de nuestro código. Su función de **Pull Requests** es la piedra angular de nuestra estrategia de mentoría y revisión de código.
 
-### **Trello** - Gestión de tareas (Kanban)
+#### **Trello** - Gestión de tareas (Kanban)
 Proporciona una visión clara y visual de qué hay por hacer, quién lo está haciendo y qué está terminado. Es fundamental para que el Líder Técnico gestione el proyecto y para que los miembros del equipo sepan en qué trabajar.
 
 ## 3\. Arquitectura del Código (Estructura)
