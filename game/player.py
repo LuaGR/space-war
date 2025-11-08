@@ -1,17 +1,20 @@
 import pygame
-import sys
-from main import SCREEN_WIDTH,SCREEN_HEIGHT
+from constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
 class Player:
-    def __init__(self):
+    def __init__(self, screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT,
+                 x=400, y=300, speed=5, size=50):
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.x = x
+        self.y = y
+        self.speed = speed
+        self.size = size
         self.move_left = False
         self.move_right = False
         self.move_up = False
         self.move_down = False
-        self.x = 400
-        self.y = 300
-        self.speed = 5
-        self.size = 50
-    
+
     def handle_movement(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
@@ -22,8 +25,7 @@ class Player:
                 self.move_up = True
             elif event.key == pygame.K_s:
                 self.move_down = True
-
-        if event.type == pygame.KEYUP:
+        elif event.type == pygame.KEYUP:
             if event.key == pygame.K_a:
                 self.move_left = False
             elif event.key == pygame.K_d:
@@ -32,7 +34,7 @@ class Player:
                 self.move_up = False
             elif event.key == pygame.K_s:
                 self.move_down = False
-    
+
     def update(self):
         if self.move_left:
             self.x -= self.speed
@@ -42,18 +44,16 @@ class Player:
             self.y -= self.speed
         if self.move_down:
             self.y += self.speed
-            
-        
-        if self.x < 0:
-            self.x = 0 
-        elif self.x > SCREEN_WIDTH - self.size:
-            self.x = SCREEN_WIDTH - self.size 
 
-    
+        if self.x < 0:
+            self.x = 0
+        elif self.x > self.screen_width - self.size:
+            self.x = self.screen_width - self.size
+
         if self.y < 0:
-            self.y = 0 
-        elif self.y > SCREEN_HEIGHT - self.size:
-            self.y = SCREEN_HEIGHT - self.size 
+            self.y = 0
+        elif self.y > self.screen_height - self.size:
+            self.y = self.screen_height - self.size
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.size, self.size))
