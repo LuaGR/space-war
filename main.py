@@ -1,8 +1,10 @@
-import pygame
 import sys
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+import pygame
+
+from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from game.player import Player
+
 TITLE = "Space War"
 FPS = 60
 
@@ -15,12 +17,17 @@ clock = pygame.time.Clock()
 
 running = True
 
+player = Player()
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        player.handle_movement(event)
 
+    player.update()
     screen.fill((0, 0, 0))
+    player.draw(screen)
 
     pygame.display.flip()
     clock.tick(FPS)
@@ -28,4 +35,3 @@ while running:
 print("Saliendo del juego...")
 pygame.quit()
 sys.exit()
-
