@@ -1,9 +1,18 @@
 import pygame
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT
+
+from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+
 
 class Player:
-    def __init__(self, screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT,
-                 x=400, y=300, speed=5, size=50):
+    def __init__(
+        self,
+        screen_width=SCREEN_WIDTH,
+        screen_height=SCREEN_HEIGHT,
+        x=400,
+        y=300,
+        speed=5,
+        size=50,
+    ):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.x = x
