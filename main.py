@@ -1,10 +1,12 @@
 import pygame
 import sys
 from game.bullet import Bullet
+from game.enemy import enemy
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 TITLE = "Space War"
 FPS = 60
+enemy_spawn_interval = 2000
 
 pygame.init()
 
@@ -14,6 +16,7 @@ pygame.display.set_caption(TITLE)
 clock = pygame.time.Clock()
 bullet = Bullet()
 bullets=[]
+
 running = True
 
 while running:
