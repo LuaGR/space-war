@@ -1,21 +1,28 @@
-
 import pygame
-from main import* 
-img_bullet = pygame.image.load("bullet.png")
-bullet_x = 0
-bullet_y = 30 
-bullet_y_mov = 1 
-bullet_visible = False
+class Bullet:
+    def __init__(self, image: pygame.Surface | None = None, speed: int = 10):
+        
+        self.visible = False
+        self.x = 0
+        self.y = 0
+        self.speed = speed
 
-def shoot(x, y):
-    global bullet_visible
-    bullet_visible = True
-    screen.blit(img_bullet, (x + 8, y + 8))
+        if image is not None:
+            self.image = image
+        else:
+            self.image = pygame.Surface((6, 16))
+            self.image.fill((128, 0, 128)) 
 
-if bullet_visible:
-    shoot(jugador_x, bullet_y)
-    if event.type == pygame.KEYDOWN:
-        if event.type == pygame.K_SPACE:
-            shoot(jugador_x, bullet_y)
-            bullet_y -= bullet_y_mov
-            
+    def shoot(self, x: float, y: float) -> None:
+        self.visible = True
+        self.x = x
+        self.y = y
+    def update(self, screen_height: int) -> None:
+        if not self.visible:
+            return
+        self.y -= self.speed
+        if self.y + self.image.get_height() < 0:
+            self.visible = False
+    def draw(self, screen: pygame.Surface) -> None:
+        if self.visible:
+            screen.blit(self.image, (self.x, self.y))
