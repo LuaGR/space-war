@@ -1,9 +1,12 @@
-import pygame
 import sys
+
+import pygame
+
+from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from game.player import Player
 from game.bullet import Bullet
-from game.enemy import enemy
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+from game.enemy import Enemy
+
 TITLE = "Space War"
 FPS = 60
 enemy_spawn_interval = 2000
@@ -19,6 +22,8 @@ bullets=[]
 
 running = True
 
+player = Player()
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -31,10 +36,15 @@ while running:
         bullet.update(SCREEN_HEIGHT)
         bullet.draw(screen)
     bullet.draw(screen)    
+        player.handle_movement(event)
+
+    player.update()
+    screen.fill((0, 0, 0))
+    player.draw(screen)
+
     pygame.display.flip()
     clock.tick(FPS)
 
 print("Saliendo del juego...")
 pygame.quit()
 sys.exit()
-
