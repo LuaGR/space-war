@@ -3,6 +3,7 @@ import sys
 import pygame
 
 from constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from game.bullet import Bullet
 from game.player import Player
 
 TITLE = "Space War"
@@ -18,6 +19,7 @@ clock = pygame.time.Clock()
 running = True
 
 player = Player()
+bullets = []
 
 while running:
     for event in pygame.event.get():
@@ -25,8 +27,25 @@ while running:
             running = False
         player.handle_movement(event)
 
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            bullet = Bullet()
+
+            bullet_x = player.x + player.size // 2 - bullet.image.get_width() // 2
+            bullet_y = player.y - bullet.image.get_height()
+            bullet.shoot(bullet_x, bullet_y)
+            bullets.append(bullet)
+
     player.update()
+
     screen.fill((0, 0, 0))
+
+    for bullet in bullets[:]:
+        bullet.update(SCREEN_HEIGHT)
+        if not bullet.visible:
+            bullets.remove(bullet)
+            continue
+        bullet.draw(screen)
+
     player.draw(screen)
 
     pygame.display.flip()
