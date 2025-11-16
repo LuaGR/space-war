@@ -1,5 +1,6 @@
 import pygame
 
+
 class Bullet:
     def __init__(self, image: pygame.Surface | None = None, speed: int = 10):
         self.visible = False
@@ -18,7 +19,7 @@ class Bullet:
         self.x = x
         self.y = y
 
-    def update(self, screen_height: int) -> None:
+    def update(self) -> None:
         if not self.visible:
             return
         self.y -= self.speed

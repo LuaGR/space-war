@@ -3,8 +3,8 @@ import sys
 import pygame
 
 from constants import SCREEN_HEIGHT, SCREEN_WIDTH
-from game.player import Player
 from game.bullet import Bullet
+from game.player import Player
 
 TITLE = "Space War"
 FPS = 60
@@ -26,10 +26,10 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         player.handle_movement(event)
-        
+
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             bullet = Bullet()
-            
+
             bullet_x = player.x + player.size // 2 - bullet.image.get_width() // 2
             bullet_y = player.y - bullet.image.get_height()
             bullet.shoot(bullet_x, bullet_y)
