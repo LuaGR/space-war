@@ -26,27 +26,25 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         player.handle_movement(event)
-        # crear una nueva bala al pulsar espacio
+        
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            b = Bullet()
-            # calcular posición a partir de Player (usa x, y, size)
-            bx = player.x + player.size // 2 - b.image.get_width() // 2
-            by = player.y - b.image.get_height()
-            b.shoot(bx, by)
-            bullets.append(b)
+            bullet = Bullet()
+            
+            bullet_x = player.x + player.size // 2 - bullet.image.get_width() // 2
+            bullet_y = player.y - bullet.image.get_height()
+            bullet.shoot(bullet_x, bullet_y)
+            bullets.append(bullet)
 
     player.update()
 
-    # pintar fondo y entidades (fuera del bucle de eventos)
     screen.fill((0, 0, 0))
 
-    # actualizar y dibujar balas; eliminar las no visibles
-    for b in bullets[:]:
-        b.update(SCREEN_HEIGHT)
-        if not b.visible:
-            bullets.remove(b)
+    for bullet in bullets[:]:
+        bullet.update(SCREEN_HEIGHT)
+        if not bullet.visible:
+            bullets.remove(bullet)
             continue
-        b.draw(screen)
+        bullet.draw(screen)
 
     player.draw(screen)
 
