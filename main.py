@@ -5,6 +5,7 @@ import pygame
 from constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from game.player import Player
 from game.bullet import Bullet
+from game.enemy import Enemy
 
 TITLE = "Space War"
 FPS = 60
