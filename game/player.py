@@ -12,6 +12,7 @@ class Player:
         y=300,
         speed=5,
         size=50,
+        shoot_sound=None,
     ):
         self.screen_width = screen_width
         self.screen_height = screen_height
@@ -19,6 +20,7 @@ class Player:
         self.y = y
         self.speed = speed
         self.size = size
+        self.shoot_sound = shoot_sound
         self.move_left = False
         self.move_right = False
         self.move_up = False
@@ -66,3 +68,7 @@ class Player:
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.size, self.size))
+
+    def shoot(self):
+        if self.shoot_sound:
+            self.shoot_sound.play()
