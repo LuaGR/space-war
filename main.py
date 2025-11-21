@@ -23,6 +23,13 @@ except FileNotFoundError as e:
     laser_sound = None
     explosion_sound = None
 
+try:
+    pygame.mixer.music.load("assets/sounds/game-music-loop-7-145285.wav")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+except FileNotFoundError as e:
+    print(f"Warning: Music file not found: {e}")
+
 clock = pygame.time.Clock()
 
 running = True
