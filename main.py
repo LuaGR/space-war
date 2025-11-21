@@ -1,7 +1,7 @@
 import sys
 
 import pygame
-
+from game.score import Score
 from constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from game.player import Player
 from game.bullet import Bullet
@@ -14,7 +14,7 @@ pygame.mixer.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(TITLE)
-
+score = Score(screen)
 try:
     laser_sound = pygame.mixer.Sound("assets/sounds/lazer-gun-432285.wav")
     explosion_sound = pygame.mixer.Sound("assets/sounds/explosion-under-snow-sfx-230505.wav")
@@ -64,7 +64,7 @@ while running:
         bullet.draw(screen)
 
     player.draw(screen)
-
+    score.Draw()
     pygame.display.flip()
     clock.tick(FPS)
 
