@@ -68,6 +68,8 @@ while running:
 
     for enemy in enemies:
         enemy.update()
+        if enemy.y > SCREEN_HEIGHT:
+            enemies.remove(enemy)
 
     player.update()
 
