@@ -1,16 +1,22 @@
 import sys
-
 import pygame
-from game.score import Score
+
 from constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from game.player import Player
 from game.bullet import Bullet
+from game.enemy import Enemy 
+from game.score import Score
 
 TITLE = "Space War"
 FPS = 60
+ENEMY_SPAWN_INTERVAL = 2000
 
 pygame.init()
 pygame.mixer.init()
+
+enemies = []
+bullets = []
+last_spawn_time = pygame.time.get_ticks()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(TITLE)
@@ -32,15 +38,15 @@ except FileNotFoundError as e:
 
 clock = pygame.time.Clock()
 
-running = True
-
 player = Player(shoot_sound=laser_sound)
-bullets = []
+
+running = True
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        
         player.handle_movement(event)
         
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -49,12 +55,26 @@ while running:
             
             bullet_x = player.x + player.size // 2 - bullet.image.get_width() // 2
             bullet_y = player.y - bullet.image.get_height()
+            
             bullet.shoot(bullet_x, bullet_y)
             bullets.append(bullet)
+
+    current_time = pygame.time.get_ticks()
+    
+    if current_time - last_spawn_time > ENEMY_SPAWN_INTERVAL:
+        new_enemy = Enemy()
+        enemies.append(new_enemy)
+        last_spawn_time = current_time
+
+    for enemy in enemies:
+        enemy.update()
 
     player.update()
 
     screen.fill((0, 0, 0))
+
+    for enemy in enemies:
+        enemy.draw(screen)
 
     for bullet in bullets[:]:
         bullet.update(SCREEN_HEIGHT)
@@ -66,6 +86,7 @@ while running:
     player.draw(screen)
     score.Draw()
     pygame.display.flip()
+
     clock.tick(FPS)
 
 print("Saliendo del juego...")
