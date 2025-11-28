@@ -85,8 +85,25 @@ while running:
             continue
         bullet.draw(screen)
 
+    for bullet in bullets[:]:
+        for enemy in enemies[:]:
+            dx = bullet.x - enemy.x
+            dy = bullet.y - enemy.y
+            enemy_radius = max(enemy.width, enemy.height) // 2
+            bullet_radius = bullet.image.get_width() // 2
+            distance = (dx ** 2 + dy ** 2) ** 0.5
+
+            if distance < bullet_radius + enemy_radius:
+                bullets.remove(bullet)
+                enemies.remove(enemy)
+
+                if explosion_sound:
+                    explosion_sound.play()
+                score.add()
+                break
+
     player.draw(screen)
-    score.Draw()
+    score.draw()
     pygame.display.flip()
 
     clock.tick(FPS)
