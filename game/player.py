@@ -13,6 +13,7 @@ class Player:
         speed=5,
         size=50,
         shoot_sound=None,
+        health_bar= None,
     ):
         self.screen_width = screen_width
         self.screen_height = screen_height
@@ -21,6 +22,7 @@ class Player:
         self.speed = speed
         self.size = size
         self.shoot_sound = shoot_sound
+        self.health_bar = health_bar
         self.move_left = False
         self.move_right = False
         self.move_up = False
@@ -72,3 +74,10 @@ class Player:
     def shoot(self):
         if self.shoot_sound:
             self.shoot_sound.play()
+    def reset_position(self):
+        self.x = self.initial_x
+        self.y = self.initial_y
+        self.move_left = False
+        self.move_right = False
+        self.move_up = False
+        self.move_down = False
