@@ -41,11 +41,14 @@ player = Player(shoot_sound=laser_sound)
 
 
 game_over = False
+muted = False # Variable para controlar el estado del silencio
+
 start_time_ms = pygame.time.get_ticks()
 elapsed_time_sec = 0
 
 font_big = pygame.font.Font(None, 64)
 font_med = pygame.font.Font(None, 36)
+font_small = pygame.font.Font(None, 24) # Fuente para indicador MUTE
 
 
 
@@ -56,6 +59,42 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        # ===== opcion de mute (tecla M) =====
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+            muted = not muted
+            if muted:
+                pygame.mixer.music.set_volume(0)
+                if laser_sound: laser_sound.set_volume(0)
+                if explosion_sound: explosion_sound.set_volume(0)
+                score.sound_score.set_volume(0)
+            else:
+                pygame.mixer.music.set_volume(0.5)
+                if laser_sound: laser_sound.set_volume(1.0)
+                if explosion_sound: explosion_sound.set_volume(1.0)
+                score.sound_score.set_volume(1.0)
+
+        # ===== reiniciar juego (tecla ENTER) =====
+        if game_over:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                # 1. Resetear variables
+                game_over = False
+                enemies = []
+                bullets = []
+                score.score = 0
+                score.write()
+
+                # 2. Resetear jugador y banderas de movimiento (CORRECCION BUG)
+                player.x = 400
+                player.y = 300
+                player.move_left = False
+                player.move_right = False
+                player.move_up = False
+                player.move_down = False
+
+                # 3. Resetear tiempos
+                start_time_ms = pygame.time.get_ticks()
+                last_spawn_time = pygame.time.get_ticks()
+                elapsed_time_sec = 0
        
         if not game_over:
             player.handle_movement(event)
@@ -79,10 +118,12 @@ while running:
         text_game_over = font_big.render("JUEGO TERMINADO", True, (255, 0, 0))
         text_score = font_med.render(f"Puntaje: {score.score}", True, (255, 255, 255))
         text_time = font_med.render(f"Tiempo: {elapsed_time_sec} s", True, (255, 255, 255))
+        text_restart = font_med.render("Presiona ENTER para reiniciar", True, (0, 255, 0))
 
         screen.blit(text_game_over, (SCREEN_WIDTH//2 - text_game_over.get_width()//2, SCREEN_HEIGHT//2 - 100))
         screen.blit(text_score, (SCREEN_WIDTH//2 - text_score.get_width()//2, SCREEN_HEIGHT//2 - 20))
         screen.blit(text_time, (SCREEN_WIDTH//2 - text_time.get_width()//2, SCREEN_HEIGHT//2 + 30))
+        screen.blit(text_restart, (SCREEN_WIDTH//2 - text_restart.get_width()//2, SCREEN_HEIGHT//2 + 80))
 
         pygame.display.flip()
         clock.tick(FPS)
@@ -101,7 +142,7 @@ while running:
 
 
     if len(enemies) < max_enemigos and current_time - last_spawn_time > current_interval:
-        enemies.append(Enemy(speed_factor=speed_factor))  # ===== Modifcado =====
+        enemies.append(Enemy(speed_factor=speed_factor))
         last_spawn_time = current_time
 
     for enemy in enemies[:]:
@@ -160,6 +201,10 @@ while running:
 
     player.draw(screen)
     score.draw()
+
+    if muted:
+        mute_text = font_small.render("MUTE", True, (150, 150, 150))
+        screen.blit(mute_text, (SCREEN_WIDTH - 60, 10))
 
     pygame.display.flip()
     clock.tick(FPS)
