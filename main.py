@@ -6,6 +6,7 @@ from game.player import Player
 from game.bullet import Bullet
 from game.enemy import Enemy
 from game.score import Score
+from game.healthbar import Health_Bar
 
 TITLE = "Space War"
 FPS = 60
@@ -21,6 +22,7 @@ last_spawn_time = pygame.time.get_ticks()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(TITLE)
 score = Score(screen)
+health_bar = Health_Bar(screen)
 
 try:
     laser_sound = pygame.mixer.Sound("assets/sounds/lazer-gun-432285.wav")
@@ -48,7 +50,7 @@ elapsed_time_sec = 0
 
 font_big = pygame.font.Font(None, 64)
 font_med = pygame.font.Font(None, 36)
-font_small = pygame.font.Font(None, 24) # Fuente para indicador MUTE
+font_small = pygame.font.Font(None, 24)
 
 
 
@@ -193,14 +195,22 @@ while running:
         enemy_rect = pygame.Rect(int(enemy.x), int(enemy.y), enemy.width, enemy.height)
 
         if enemy_rect.colliderect(player_rect):
-            elapsed_time_sec = (pygame.time.get_ticks() - start_time_ms) // 1000
-            game_over = True
+            if explosion_sound:
+                explosion_sound.play()
+                health_bar.lose_health()
+                enemies.remove(enemy)
+            if not health_bar.is_alive():
+                elapsed_time_sec = (pygame.time.get_ticks() - start_time_ms) // 1000
+                game_over = True
+            else:
+                player.reset_position()
             break
   
 
 
     player.draw(screen)
     score.draw()
+    health_bar.draw()
 
     if muted:
         mute_text = font_small.render("MUTE", True, (150, 150, 150))

@@ -14,6 +14,8 @@ class Player:
         size=50,
         shoot_sound=None,
     ):
+        self.initial_x = x
+        self.initial_y = y
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.x = x
@@ -72,3 +74,10 @@ class Player:
     def shoot(self):
         if self.shoot_sound:
             self.shoot_sound.play()
+    def reset_position(self):
+        self.x = self.initial_x
+        self.y = self.initial_y
+        self.move_left = False
+        self.move_right = False
+        self.move_up = False
+        self.move_down = False

@@ -13,6 +13,9 @@ class Score:
         self.score += 1
         self.sound_score.play()
         self.write()
+    def reset_score(self):
+        self.score=0
+        self.write()
         
     def write(self):
         self.text = self.font.render(f"Score: {self.score}", True, self.WHITE)
