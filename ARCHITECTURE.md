@@ -1,170 +1,632 @@
-<!-- markdownlint-disable -->
-# Documentación de Arquitectura: Space War
+# Architecture Decision Records (ADR)
+## La Venganza de la Paloma
 
-## 1. Propósito y Filosofía de Diseño
+> **Proyecto:** Space shooter arcade con temática peruana  
+> **Stack:** Python 3.x + Pygame  
+> **Última actualización:** Diciembre 2025
 
-### 1.1. Propósito
+---
 
-Este documento describe la arquitectura de software, las decisiones técnicas y los estándares de colaboración para el proyecto "Space War". Sirve como la "fuente de verdad" para todos los miembros del equipo.
+## Tabla de Contenidos
 
-El objetivo principal no es solo entregar un juego funcional, sino también **facilitar el aprendizaje** de Python, Pygame y Git para todos los miembros.
+1. [ADR-001: Paradigma de Programación Orientado a Objetos](#adr-001-paradigma-de-programación-orientado-a-objetos)
+2. [ADR-002: Uso de Pygame como Motor de Juego](#adr-002-uso-de-pygame-como-motor-de-juego)
+3. [ADR-003: Arquitectura Modular por Entidades](#adr-003-arquitectura-modular-por-entidades)
+4. [ADR-004: Game Loop Imperativo con 60 FPS](#adr-004-game-loop-imperativo-con-60-fps)
+5. [ADR-005: Sistema de Manejo de Eventos Sin Estado Global](#adr-005-sistema-de-manejo-de-eventos-sin-estado-global)
+6. [ADR-006: Sistema de Vidas con Respawn](#adr-006-sistema-de-vidas-con-respawn)
+7. [ADR-007: Dificultad Dinámica Basada en Score](#adr-007-dificultad-dinámica-basada-en-score)
+8. [ADR-008: Sistema de Pausa y Mute](#adr-008-sistema-de-pausa-y-mute)
+9. [ADR-009: Assets con Identidad Cultural Peruana](#adr-009-assets-con-identidad-cultural-peruana)
+10. [ADR-010: Gestión de Colisiones Manual](#adr-010-gestión-de-colisiones-manual)
+11. [ADR-011: Flujo de Trabajo Git con PRs](#adr-011-flujo-de-trabajo-git-con-prs)
 
-### 1.2. Filosofía de Diseño
+---
 
-Nuestra arquitectura se basa en tres principios clave:
+## ADR-001: Paradigma de Programación Orientado a Objetos
 
-1.  **Simplicidad sobre Complejidad:** Siempre elegiremos la solución más simple y legible. Es más importante que un miembro novato entienda el código a que este sea el más "eficiente" o "avanzado".
-2.  **Modularidad:** Cada "cosa" en el juego debe tener su propio archivo (`player.py`, `enemy.py`). Esto nos permite trabajar en paralelo sin pisarnos.
-3.  **Consistencia:** Seguiremos los mismos estándares de nombrado (prefijos, commits en inglés) y el mismo flujo de trabajo (Trello -\> Branch -\> PR) sin excepción.
+### Estado
+✅ **Aceptado** e implementado
 
-## 2. Paradigmas y Stack Tecnológico
+### Contexto
+El equipo tiene niveles mixtos de experiencia (3 Trainees, 1 Novato, 1 Líder Técnico). Necesitamos una arquitectura que sea:
+- Fácil de entender para quienes están aprendiendo Python desde cero
+- Escalable para agregar nuevas entidades (power-ups, jefes, etc.)
+- Mantenible para trabajo en paralelo sin conflictos
 
-### 2.1. Paradigmas de Programación Utilizados
+### Decisión
+Usaremos **Programación Orientada a Objetos (POO)** como paradigma principal:
+- Cada entidad del juego (Player, Enemy, Bullet, Score, HealthBar) es una **clase independiente**
+- Cada clase encapsula sus propios atributos (posición, velocidad, vida) y comportamientos (update, draw, shoot)
+- Las instancias se gestionan mediante listas de Python simples (`enemies = []`, `bullets = []`)
 
-El diseño del proyecto "Space War" se apoya principalmente en los siguientes paradigmas:
+### Consecuencias
 
-- **Programación Orientada a Objetos (POO):**
-  Cada entidad principal del juego (jugador, enemigo, bala) se implementa como una clase independiente, encapsulando atributos y comportamientos. Esto facilita la modularidad, la reutilización y el mantenimiento del código.
+**Positivas:**
+- ✅ Código altamente modular: cada miembro puede trabajar en su propia clase sin conflictos
+- ✅ Fácil de entender: "un enemigo es un objeto Enemy con posición X/Y y velocidad"
+- ✅ Facilita el debugging: si las balas fallan, el problema está en `bullet.py`
 
-- **Programación Imperativa:**
-  El flujo principal del juego (game loop) y la gestión de eventos siguen un enfoque imperativo, donde se describen explícitamente los pasos a ejecutar para actualizar el estado del juego y renderizar la pantalla.
+**Negativas:**
+- ⚠️ Más verboso que un enfoque funcional o ECS (Entity-Component-System)
+- ⚠️ Potencial duplicación de código (todos los objetos tienen `.draw()` y `.update()`)
 
-> Nota: Se evita deliberadamente el uso de paradigmas más avanzados (como la programación funcional o basada en componentes) para priorizar la claridad y el aprendizaje de los miembros menos experimentados.
+**Mitigaciones:**
+- Se evitó usar herencia compleja o patrones avanzados (decorators, mixins) para mantener simplicidad
 
-### 2.2. Stack Tecnológico y Justificación
+---
 
-#### **Python 3.x** - Lenguaje de programación principal
-Su sintaxis limpia y fácil lectura lo hacen ideal para un equipo con habilidades mixtas, especialmente para los 2 miembros que están aprendiendo desde cero.
+## ADR-002: Uso de Pygame como Motor de Juego
 
-#### **Pygame** - Librería para desarrollo de juegos
-Es la librería estándar de Python para juegos 2D. Proporciona módulos esenciales listos para usar (ventana, gráficos, sonido, eventos de teclado) que nos permiten enfocarnos en la *lógica* del juego y no en crear un motor gráfico desde cero.
+### Estado
+✅ **Aceptado** e implementado
 
-#### **Git** - Sistema de control de versiones
-Esencial para el trabajo colaborativo. Nos permite rastrear cambios, experimentar en ramas sin romper el juego principal y fusionar el trabajo de 6 personas de forma ordenada.
+### Contexto
+Necesitamos una librería de Python que:
+- Maneje gráficos 2D, sonidos, colisiones y eventos de teclado
+- Sea lo suficientemente simple para que principiantes puedan leer su código
+- No requiera conocimientos previos de OpenGL, DirectX o motores complejos como Unity/Godot
 
-#### **GitHub** - Plataforma de hosting de repositorios
-Es el "servidor central" de nuestro código. Su función de **Pull Requests** es la piedra angular de nuestra estrategia de mentoría y revisión de código.
+### Decisión
+Usaremos **Pygame 2.x** como motor de juego.
 
-#### **Trello** - Gestión de tareas (Kanban)
-Proporciona una visión clara y visual de qué hay por hacer, quién lo está haciendo y qué está terminado. Es fundamental para que el Líder Técnico gestione el proyecto y para que los miembros del equipo sepan en qué trabajar.
+### Alternativas Consideradas
 
-## 3\. Arquitectura del Código (Estructura)
+| Librería | Pros | Contras | Decisión |
+|----------|------|---------|----------|
+| **Pygame** | ✅ Simple, documentada, comunidad grande | Poco performante para juegos complejos | ✅ **ELEGIDA** |
+| **Arcade** | Más moderna, mejor performance | Menos documentación en español | ❌ Rechazada |
+| **Godot (GDScript)** | Motor completo con editor visual | Curva de aprendizaje muy alta | ❌ Rechazada |
+| **Ren'Py** | Excelente para visual novels | No es para shooters | ❌ Rechazada |
 
-La estructura de carpetas está diseñada para ser intuitiva y desacoplada.
+### Consecuencias
+
+**Positivas:**
+- ✅ Instalación trivial: `pip install pygame`
+- ✅ Código Python puro, sin sintaxis especial
+- ✅ Abundancia de tutoriales en español
+
+**Negativas:**
+- ⚠️ Performance limitada (no es viable para juegos con 10,000+ objetos en pantalla)
+- ⚠️ API algo antigua (usa conceptos de SDL 1.2)
+
+**Mitigaciones:**
+- El scope del juego es pequeño (máx. 10 enemigos simultáneos), por lo que la performance es suficiente
+
+---
+
+## ADR-003: Arquitectura Modular por Entidades
+
+### Estado
+✅ **Aceptado** e implementado
+
+### Contexto
+Necesitamos una estructura de archivos que permita:
+- Trabajo en paralelo (5 personas sin pisarse)
+- Que sea intuitivo para nuevos miembros encontrar el código que buscan
+- Facilitar code reviews en Pull Requests (cambios concentrados en 1-2 archivos)
+
+### Decisión
+La estructura de carpetas es:
 
 ```
 space-war/
 │
-├── .gitignore          # Ignora archivos temporales (Pycache, venv).
-├── README.md           # Instrucciones de cómo instalar y ejecutar.
-├── ARCHITECTURE.md     # (Este archivo)
-├── requirements.txt    # Lista de dependencias (solo 'pygame').
-├── main.py             # PUNTO DE ENTRADA. Orquesta el juego.
+├── main.py              # Orquestador: game loop, lógica de alto nivel
+├── constants.py         # Configuraciones globales (SCREEN_WIDTH, SCREEN_HEIGHT)
+├── requirements.txt     # Dependencias (solo 'pygame')
+├── ARCHITECTURE.md      # Este documento (ADR)
+├── README.md            # Instrucciones de instalación y contexto
 │
-├── game/               # Lógica principal del juego (nuestro "paquete").
-│   ├── __init__.py     # Le dice a Python que 'game/' es un paquete.
-│   ├── player.py       # Define la clase 'Player'.
-│   ├── enemy.py        # Define la clase 'Enemy'.
-│   ├── bullet.py       # Define la clase 'Bullet'.
-│   └── ...             # (futuras clases: score.py, screen.py, etc.)
+├── game/                # Paquete Python con la lógica del juego
+│   ├── __init__.py      # Marca 'game/' como paquete
+│   ├── player.py        # Clase Player (movimiento WASD, disparo)
+│   ├── enemy.py         # Clase Enemy (movimiento horizontal + descenso)
+│   ├── bullet.py        # Clase Bullet (movimiento vertical hacia arriba)
+│   ├── score.py         # Clase Score (contador + renderizado)
+│   └── healthbar.py     # Clase Health_Bar (corazones visuales)
 │
-└── assets/             # Recursos artísticos. NADA de código aquí.
-    ├── images/         # Sprites (.png con transparencia).
-    ├── sounds/         # Efectos de sonido (.wav o .ogg).
-    └── music/          # Música de fondo (.mp3).
+└── assets/              # Recursos artísticos (NO hay código aquí)
+    ├── image/           # Sprites (.png con transparencia)
+    │   ├── Paloma_meme_1.png        # Jugador
+    │   ├── Alan_Garcia_muerto_meme.png  # Enemigo
+    │   ├── Corazon_healt.png        # Vida
+    │   └── Fondo_meme_palacio_de_gobierno.png  # Background
+    └── sounds/          # Audio (.wav, .mp3)
+        ├── Triciclo Perú.wav        # Música de fondo
+        ├── lazer-gun-432285.wav     # Sonido de disparo
+        ├── explosion-under-snow-sfx-230505.wav  # Sonido de explosión
+        └── sound-of-collision.wav   # Sonido de score
 ```
 
-### Justificación de `game/` vs. `src/`:
+### Justificación de `game/` vs. `src/`
+Se eligió el nombre **`game/`** en lugar del genérico `src/` por **claridad semántica**. Un nuevo miembro sabe inmediatamente que la lógica del juego vive ahí.
 
-Se eligió el nombre `game/` en lugar del genérico `src/` por **claridad semántica**. Es inmediatamente obvio para un miembro nuevo que la lógica del juego (clases, etc.) vive dentro de esa carpeta.
+### Consecuencias
 
-## 4. Flujo de Datos (El Bucle Principal)
+**Positivas:**
+- ✅ Separación de responsabilidades: cada archivo tiene un único propósito
+- ✅ PRs pequeños y fáciles de revisar (generalmente 1 archivo modificado)
+- ✅ Facilita testing: puedes probar `Bullet` sin instanciar `Player` o `Enemy`
 
-El corazón de `main.py` es el **Game Loop**. Este bucle se ejecuta 60 veces por segundo (60 FPS) y sigue un patrón estricto:
+**Negativas:**
+- ⚠️ Más archivos = más imports en `main.py`
+- ⚠️ Potencial para "over-engineering" si se crean archivos para cosas triviales
 
-1.  **Manejar Entradas (Input):**
+**Mitigaciones:**
+- Solo se crea un archivo nuevo si la clase tiene más de 50 líneas o responsabilidades claramente diferenciadas
 
-      * Comprueba todos los eventos de Pygame (teclado, ratón, cerrar ventana).
-      * Ej: ¿El jugador presionó `ESPACIO`? ¿Presionó `FLECHA IZQUIERDA`?
+---
 
-2.  **Actualizar Estado (Update):**
+## ADR-004: Game Loop Imperativo con 60 FPS
 
-      * **NO SE DIBUJA NADA AQUÍ.**
-      * Mueve al jugador si una tecla está presionada.
-      * Mueve a todos los enemigos.
-      * Mueve todas las balas.
-      * Comprueba colisiones (Balas vs Enemigos, Enemigo vs Jugador).
-      * Crea/destruye objetos (ej. crear una bala, destruir un enemigo).
-      * Actualiza el puntaje.
+### Estado
+✅ **Aceptado** e implementado
 
-3.  **Dibujar en Pantalla (Draw / Render):**
+### Contexto
+Todos los juegos de acción necesitan un **bucle principal** que se ejecute constantemente. Necesitamos decidir:
+- ¿Cuántas veces por segundo debe ejecutarse? (FPS)
+- ¿Qué orden de operaciones seguimos? (input → update → render)
+- ¿Cómo manejamos la pausa y el game over?
 
-      * **NO SE TOMA NINGUNA DECISIÓN LÓGICA AQUÍ.**
-      * Rellena la pantalla con el color de fondo (negro).
-      * Dibuja al jugador en su nueva posición (`.blit()`).
-      * Dibuja a cada enemigo en su nueva posición.
-      * Dibuja cada bala en su nueva posición.
-      * Dibuja el puntaje.
-      * Finalmente, le dice a Pygame que muestre todo lo dibujado (`pygame.display.flip()`).
+### Decisión
+Implementamos un **Game Loop imperativo** en `main.py` con 3 fases claras:
 
-## 5. Componentes Clave (Clases Principales)
+```python
+while running:
+    # 1. INPUT: Manejar eventos (teclado, cerrar ventana)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        player.handle_movement(event)
+        if event.key == pygame.K_SPACE:
+            bullets.append(Bullet())
 
-  * `main.py` (**El Orquestador**):
+    # 2. UPDATE: Cambiar el estado del juego (NO DIBUJAR)
+    if not paused and not game_over:
+        player.update()
+        for enemy in enemies:
+            enemy.update()
+        for bullet in bullets:
+            bullet.update()
+        # Detectar colisiones...
 
-      * **Responsabilidad:** Inicializar Pygame, crear la ventana, cargar assets, crear instancias de objetos (un `Player`, una lista de `Enemies`) y ejecutar el Game Loop.
-      * **No debe** contener la lógica *interna* del jugador (ej. `player.move_left()` es correcto, `player.x = player.x - 5` es incorrecto).
+    # 3. DRAW: Dibujar en pantalla (NO TOMAR DECISIONES)
+    screen.blit(background_img, (0, 0))
+    player.draw(screen)
+    for enemy in enemies:
+        enemy.draw(screen)
+    for bullet in bullets:
+        bullet.draw(screen)
+    score.draw()
+    health_bar.draw()
+    pygame.display.flip()
 
-  * `game/player.py` (Clase `Player`):
+    clock.tick(60)  # Limitar a 60 FPS
+```
 
-      * **Responsabilidad:** Contiene todo sobre el jugador.
-      * **Atributos:** Su imagen (`.image`), su posición (`.rect`), su velocidad, su vida.
-      * **Métodos:** `move(dx, dy)`, `shoot()`, `draw(screen)`.
+**Regla de Oro:** 
+- En la fase `UPDATE`, **NO SE DIBUJA NADA**.
+- En la fase `DRAW`, **NO SE TOMA NINGUNA DECISIÓN LÓGICA**.
 
-  * `game/enemy.py` (Clase `Enemy`):
+### Consecuencias
 
-      * **Responsabilidad:** Contiene todo sobre un *único* enemigo.
-      * **Atributos:** Su imagen, posición (`.rect`), velocidad, tipo.
-      * **Métodos:** `update()`, `draw(screen)`.
+**Positivas:**
+- ✅ Fácil de seguir: el flujo es lineal y predecible
+- ✅ Debugging simplificado: si algo no se mueve, el problema está en `UPDATE`. Si no se ve, está en `DRAW`.
+- ✅ 60 FPS constantes aseguran jugabilidad fluida
 
-  * `game/bullet.py` (Clase `Bullet`):
+**Negativas:**
+- ⚠️ El código de `main.py` puede crecer mucho (actualmente ~265 líneas)
+- ⚠️ Lógica de colisiones está mezclada con el game loop
 
-      * **Responsabilidad:** Contiene todo sobre una *única* bala.
-      * **Atributos:** Su imagen, posición (`.rect`), velocidad.
-      * **Métodos:** `update()` (moverse hacia arriba), `draw(screen)`.
+**Mitigaciones:**
+- Se aceptó el crecimiento de `main.py` como trade-off por mantener la lógica centralizada y fácil de entender
 
-## 6. Flujo de Colaboración (Arquitectura de Repositorio)
+---
 
-Nuestra arquitectura de repositorio (Git) es tan importante como nuestra arquitectura de código.
+## ADR-005: Sistema de Manejo de Eventos Sin Estado Global
 
-1.  **Rama `main`:** Es la rama principal. **Está protegida.** Nadie puede hacer `push` directamente a ella. Todo el código en `main` debe ser funcional.
-2.  **Ramas de Tarea:** Todo el trabajo se realiza en ramas separadas. El nombre de la rama **debe** corresponder a una tarjeta de Trello.
-      * **Formato:** `[prefijo]/[nombre-tarea]` (ej. `feature/player-movement`, `assets/add-sounds`).
-      * Ver la tarjeta de Trello `Guía de Prefijos` para los prefijos.
-3.  **Commits:** Se hacen en inglés, usando prefijos (ej. `feat:`, `fix:`, `docs:`).
-4.  **Pull Requests (PRs):** Cuando una tarea está terminada, el miembro crea un Pull Request en GitHub de su rama hacia `main`.
-5.  **Revisión de Código:** El Líder Técnico es asignado automáticamente para revisar el PR. Esta es nuestra principal herramienta de mentoría. Aquí se revisa que el código funcione y que siga los estándares.
-6.  **Merge (Fusión):** Solo el Líder Técnico puede aprobar y fusionar un PR. Una vez fusionado, la tarjeta de Trello se mueve a `¡Hecho!`.
+### Estado
+✅ **Aceptado** e implementado
 
-## 7. Definición de "Hecho" (Definition of Done)
+### Contexto
+El jugador se mueve con **teclas WASD**. Necesitamos decidir cómo detectar cuando una tecla está presionada:
+- ¿Verificamos `pygame.key.get_pressed()` en cada frame?
+- ¿O usamos eventos `KEYDOWN` y `KEYUP` para trackear el estado?
 
-Una tarea (y su tarjeta de Trello) solo se considera **"Hecha"** si cumple TODO lo siguiente:
+### Decisión
+Usamos **eventos de Pygame** (`KEYDOWN`/`KEYUP`) combinados con **flags booleanos** en la clase `Player`:
 
-1.  El código cumple con todos los requisitos de la tarea.
-2.  El código no "rompe" ninguna funcionalidad existente.
-3.  El código sigue los estándares (prefijos de commit, estilo de código).
-4.  El código ha sido revisado y aprobado por el Líder Técnico.
-5.  La rama ha sido fusionada (`merged`) a `main`.
+```python
+class Player:
+    def __init__(self):
+        self.move_left = False
+        self.move_right = False
+        self.move_up = False
+        self.move_down = False
 
-## 8. Riesgos y Decisiones de Mitigación
+    def handle_movement(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a: self.move_left = True
+            if event.key == pygame.K_d: self.move_right = True
+            # ...
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_a: self.move_left = False
+            if event.key == pygame.K_d: self.move_right = False
 
-  * **Riesgo:** Nivel de habilidad mixto (3 Juniors, 2 Novatos).
+    def update(self):
+        if self.move_left: self.x -= self.speed
+        if self.move_right: self.x += self.speed
+        # ...
+```
 
-      * **Mitigación:**
-        1.  **Mentoría Activa:** Los PRs son la herramienta principal.
-        2.  **Tareas Claras:** Las tarjetas de Trello tienen checklists detalladas.
-        3.  **Tareas Paralelas:** Los Novatos contribuyen con Assets y Documentación mientras aprenden Python, para que siempre estén integrados al equipo.
+**Ventaja:** El jugador solo se mueve mientras la tecla esté presionada. Al soltar, el movimiento se detiene inmediatamente.
 
-  * **Decisión Arquitectónica:** No se usarán `pygame.sprite.Group` al inicio.
+### Alternativa Rechazada
+Usar `pygame.key.get_pressed()` directamente en `main.py`:
 
-      * **Motivo:** Aunque son más eficientes, la lógica de `Group` es abstracta. Para fines de aprendizaje, es mejor que los Juniors implementen la gestión de listas (ej. `for bullet in bullets_list:`) y la detección de colisiones (`bullet.rect.colliderect(enemy.rect)`) manualmente.
-      * **Plan:** Se puede **refactorizar** el código para usar `sprite.Group` en el Sprint 5 o 6, una vez que el equipo entienda la lógica fundamental.
+```python
+keys = pygame.key.get_pressed()
+if keys[pygame.K_a]:
+    player.x -= 5
+```
+
+**Por qué fue rechazada:**
+- ❌ Viola el principio de encapsulación (la lógica del jugador estaría en `main.py`)
+- ❌ Más difícil de testear
+
+### Consecuencias
+
+**Positivas:**
+- ✅ La clase `Player` es autosuficiente
+- ✅ Fácil de extender (podemos agregar doble tap para dash, por ejemplo)
+
+**Negativas:**
+- ⚠️ Más código boilerplate (4 flags por cada dirección)
+
+---
+
+## ADR-006: Sistema de Vidas con Respawn
+
+### Estado
+✅ **Aceptado** e implementado
+
+### Contexto
+Queríamos un juego más permisivo que el clásico "1 hit = game over". Decidimos implementar:
+- 3 vidas (representadas por corazones)
+- Al recibir daño, el jugador reaparece en el centro y pierde 1 vida
+- Game over solo cuando las 3 vidas se agoten
+
+### Decisión
+Creamos la clase `Health_Bar` que:
+- Maneja el estado de vida actual (`current_health`)
+- Dibuja corazones visuales en la esquina superior derecha
+- Expone métodos `lose_health()`, `is_alive()`, `reset_health()`
+
+Cuando un enemigo colisiona con el jugador:
+
+```python
+if enemy_rect.colliderect(player_rect):
+    health_bar.lose_health()
+    enemies.remove(enemy)
+    if not health_bar.is_alive():
+        game_over = True
+    else:
+        player.reset_position()  # Vuelve al centro
+```
+
+### Consecuencias
+
+**Positivas:**
+- ✅ Juego más accesible para principiantes
+- ✅ Feedback visual claro (corazones desaparecen)
+- ✅ Permite errores sin penalización inmediata
+
+**Negativas:**
+- ⚠️ Puede hacer el juego demasiado fácil al inicio
+
+**Mitigaciones:**
+- Se implementó dificultad dinámica para compensar (ver ADR-007)
+
+---
+
+## ADR-007: Dificultad Dinámica Basada en Score
+
+### Estado
+✅ **Aceptado** e implementado
+
+### Contexto
+El juego se volvía monótono después de 30 segundos. Necesitábamos un sistema que aumentara la dificultad progresivamente sin hacer cambios manuales.
+
+### Decisión
+Implementamos **dificultad dinámica** basada en el `score` del jugador:
+
+```python
+puntos = score.score
+
+# 1. Máximo de enemigos simultáneos aumenta con el score
+max_enemigos = min(10, 4 + puntos // 2)
+
+# 2. Intervalo de spawn disminuye (más enemigos aparecen)
+current_interval = max(600, ENEMY_SPAWN_INTERVAL - puntos * 120)
+
+# 3. Velocidad de enemigos aumenta
+speed_factor = 1.0 + (puntos // 3) * 0.25
+enemies.append(Enemy(speed_factor=speed_factor))
+```
+
+**Ejemplo de progresión:**
+| Score | Max Enemigos | Spawn Interval (ms) | Speed Factor |
+|-------|--------------|---------------------|--------------|
+| 0     | 4            | 2000                | 1.0x         |
+| 4     | 6            | 1520                | 1.25x        |
+| 8     | 8            | 1040                | 1.5x         |
+| 12    | 10           | 600                 | 2.0x         |
+
+### Consecuencias
+
+**Positivas:**
+- ✅ Juego escalable: siempre hay un desafío nuevo
+- ✅ Replayability: cada partida es única
+- ✅ Sensación de progresión sin niveles explícitos
+
+**Negativas:**
+- ⚠️ Puede volverse imposible después de cierto score
+- ⚠️ No hay "jefes" ni cambios de escenario
+
+**Mejoras Futuras:**
+- Agregar power-ups cuando el score sea múltiplo de 10
+- Cambiar color del fondo cada 20 puntos
+
+---
+
+## ADR-008: Sistema de Pausa y Mute
+
+### Estado
+✅ **Aceptado** e implementado
+
+### Contexto
+Durante las pruebas, los testers pedían poder pausar el juego sin cerrarlo. También, algunos encuentran la música repetitiva.
+
+### Decisión
+Implementamos dos funcionalidades adicionales:
+
+**1. Pausa (tecla P):**
+```python
+if event.key == pygame.K_p:
+    paused = not paused
+    if paused:
+        pygame.mixer.music.pause()
+        pause_start_tick = pygame.time.get_ticks()
+    else:
+        pygame.mixer.music.unpause()
+        total_paused_time += (pygame.time.get_ticks() - pause_start_tick)
+```
+
+- Detiene el UPDATE loop
+- Pausa la música
+- Muestra overlay "PAUSA" en pantalla
+- Ajusta el tiempo total para que el timer no cuente el tiempo pausado
+
+**2. Mute (tecla M):**
+```python
+if event.key == pygame.K_m:
+    muted = not muted
+    if muted:
+        pygame.mixer.music.set_volume(0)
+        laser_sound.set_volume(0)
+        explosion_sound.set_volume(0)
+    else:
+        pygame.mixer.music.set_volume(0.5)
+        laser_sound.set_volume(1.0)
+        explosion_sound.set_volume(1.0)
+```
+
+- Silencia todos los sonidos sin detener el juego
+- Muestra indicador "MUTE" en esquina superior derecha
+
+### Consecuencias
+
+**Positivas:**
+- ✅ Mejora la UX significativamente
+- ✅ Permite jugar en entornos donde el sonido no es apropiado
+
+**Negativas:**
+- ⚠️ Agrega complejidad al game loop (muchos flags: `paused`, `muted`, `game_over`)
+
+---
+
+## ADR-009: Assets con Identidad Cultural Peruana
+
+### Estado
+✅ **Aceptado** e implementado
+
+### Contexto
+Inicialmente, el proyecto se llamaba "Space War" genérico. Durante el desarrollo, el equipo decidió darle una identidad única usando **memes y referencias peruanas**.
+
+### Decisión
+Los assets son:
+- **Jugador:** Paloma (ave símbolo de Perú)
+- **Enemigo:** Alan García (expresidente fallecido, convertido en meme)
+- **Fondo:** Palacio de Gobierno de Lima
+- **Música:** "Triciclo Perú" (audio viral peruano)
+
+**Nombre del juego:** **"La Venganza de la Paloma"**
+
+### Justificación
+- ✅ Da personalidad única al proyecto
+- ✅ Facilita la identificación del juego en portfolios
+- ✅ Promueve la cultura peruana de forma humorística
+
+### Consecuencias
+
+**Positivas:**
+- ✅ Memorable: nadie más tiene un juego así
+- ✅ Potencial de viralización en redes sociales peruanas
+
+**Negativas:**
+- ⚠️ Puede ser culturalmente sensible (Alan García es figura política)
+- ⚠️ Audiencia limitada a público peruano o latinoamericano
+
+**Mitigaciones:**
+- Los assets son intercambiables (están en `assets/`, no hardcodeados)
+- Se puede crear un "reskin" con assets genéricos si es necesario
+
+---
+
+## ADR-010: Gestión de Colisiones Manual
+
+### Estado
+✅ **Aceptado** (con plan de refactor futuro)
+
+### Contexto
+Pygame ofrece `pygame.sprite.Group` para gestionar colisiones automáticamente. Sin embargo, decidimos implementar colisiones manualmente al inicio.
+
+### Decisión
+Las colisiones se detectan usando `pygame.Rect.colliderect()` en el game loop de `main.py`:
+
+```python
+# Colisión bala-enemigo
+for bullet in bullets[:]:
+    bullet_rect = pygame.Rect(int(bullet.x), int(bullet.y),
+                             bullet.image.get_width(), bullet.image.get_height())
+    for enemy in enemies[:]:
+        enemy_rect = pygame.Rect(int(enemy.x), int(enemy.y),
+                               enemy.width, enemy.height)
+        if bullet_rect.colliderect(enemy_rect):
+            bullets.remove(bullet)
+            enemies.remove(enemy)
+            score.add()
+            break
+```
+
+### Justificación
+- ✅ **Pedagógica:** Los miembros novatos entienden exactamente cómo funcionan las colisiones
+- ✅ **Control total:** Podemos decidir qué hacer exactamente cuando dos objetos colisionan
+- ✅ **Sin abstracciones:** No hay "magia" de Pygame que oculte la lógica
+
+### Alternativa: `pygame.sprite.Group`
+```python
+# Con sprite.Group (más eficiente, menos claro)
+enemies_group = pygame.sprite.Group()
+bullets_group = pygame.sprite.Group()
+
+collisions = pygame.sprite.groupcollide(bullets_group, enemies_group, True, True)
+for bullet, enemies_hit in collisions.items():
+    score.add()
+```
+
+**Por qué NO lo usamos:**
+- ❌ Menor claridad sobre qué hace `groupcollide()` internamente
+- ❌ Requiere que todas las clases hereden de `pygame.sprite.Sprite`
+- ❌ Más difícil de debuggear
+
+### Consecuencias
+
+**Positivas:**
+- ✅ Código transparente
+- ✅ Control total de la lógica de colisiones
+
+**Negativas:**
+- ⚠️ Código más verboso (muchos loops anidados)
+- ⚠️ Performance O(n²) cuando hay muchos objetos
+
+---
+
+## ADR-011: Flujo de Trabajo Git con PRs
+
+### Estado
+✅ **Aceptado** e implementado
+
+### Contexto
+Equipo de 5 personas con niveles mixtos de experiencia (3 Trainees, 1 Novato, 1 Líder Técnico). Necesitamos:
+- Evitar que alguien rompa `main` accidentalmente
+- Facilitar mentoría y code reviews
+- Mantener historial limpio de commits
+
+### Decisión
+
+**Estructura de ramas:**
+- `main`: Rama protegida. Solo el Líder Técnico puede hacer merge.
+- `feature/[nombre]`: Para nuevas funcionalidades
+- `fix/[nombre]`: Para corrección de bugs
+- `assets/[nombre]`: Para agregar/modificar assets
+- `docs/[nombre]`: Para documentación
+
+**Flujo de trabajo:**
+1. Crear tarjeta en Trello con la tarea
+2. Crear rama local: `git checkout -b feature/player-movement`
+3. Hacer commits en inglés con prefijos: `feat: add WASD movement to Player`
+4. Hacer push: `git push origin feature/player-movement`
+5. Abrir Pull Request en GitHub hacia `main`
+6. Asignar al Líder Técnico para review
+7. Líder Técnico revisa, comenta y aprueba
+8. Merge a `main`
+9. Mover tarjeta de Trello a "Hecho"
+
+**Prefijos de commits:**
+- `feat:` Nueva funcionalidad
+- `fix:` Corrección de bug
+- `docs:` Documentación
+- `refactor:` Mejora de código sin cambiar funcionalidad
+- `test:` Tests
+- `chore:` Tareas menores (actualizar .gitignore, etc.)
+
+### Consecuencias
+
+**Positivas:**
+- ✅ `main` siempre es funcional
+- ✅ Code reviews son la principal herramienta de mentoría
+- ✅ Historial de Git es legible y útil
+
+**Negativas:**
+- ⚠️ Puede ralentizar el desarrollo (hay que esperar aprobación)
+- ⚠️ Requiere disciplina del equipo
+
+**Mitigaciones:**
+- El Líder Técnico se compromete a revisar PRs en máximo 24 horas
+- PRs pequeños (1-2 archivos) se priorizan
+
+---
+
+## Definición de "Hecho" (Definition of Done)
+
+Una tarea solo se considera **"Hecha"** si cumple TODO lo siguiente:
+
+1. ✅ El código cumple con todos los requisitos de la tarea
+2. ✅ El código no "rompe" ninguna funcionalidad existente
+3. ✅ El código sigue los estándares (prefijos de commit, estilo de código)
+4. ✅ El código ha sido revisado y aprobado por el Líder Técnico
+5. ✅ La rama ha sido fusionada (`merged`) a `main`
+6. ✅ La tarjeta de Trello está en la columna "¡Hecho!"
+
+---
+
+## Stack Tecnológico
+
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| **Python** | 3.x | Lenguaje principal |
+| **Pygame** | 2.x | Motor de juego 2D |
+| **Git** | 2.x | Control de versiones |
+| **GitHub** | - | Hosting de repositorio y PRs |
+| **Trello** | - | Gestión de tareas (Kanban) |
+
+---
+
+## Métricas del Proyecto
+
+| Métrica | Valor Actual |
+|---------|--------------|
+| Líneas de código | ~500 LOC |
+| Archivos Python | 8 archivos |
+| Clases implementadas | 5 clases |
+| FPS | 60 constantes |
+| Max enemigos simultáneos | 10 |
+| Vidas del jugador | 3 |
+| Features core | 100% completas |
+
+---
+
+**Este documento es la fuente de verdad para el proyecto. Cualquier decisión técnica importante debe registrarse aquí.**
