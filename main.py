@@ -44,9 +44,13 @@ player = Player(shoot_sound=laser_sound)
 
 game_over = False
 muted = False # Variable para controlar el estado del silencio
+paused = False # Variable para controlar el estado de pausa
 
 start_time_ms = pygame.time.get_ticks()
 elapsed_time_sec = 0
+# Variable para compensar el tiempo que el juego estuvo en pausa
+total_paused_time = 0
+pause_start_tick = 0
 
 font_big = pygame.font.Font(None, 64)
 font_med = pygame.font.Font(None, 36)
@@ -60,6 +64,20 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+        # ===== Opción de PAUSA (tecla P) =====
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            if not game_over: # Solo pausar si el juego está activo
+                paused = not paused
+                if paused:
+                    pygame.mixer.music.pause()
+                    pause_start_tick = pygame.time.get_ticks() # Guardar cuando empezó la pausa
+                else:
+                    pygame.mixer.music.unpause()
+                    # Sumar el tiempo que estuvo pausado para no afectar el cronómetro
+                    total_paused_time += (pygame.time.get_ticks() - pause_start_tick) 
+                    # Ajustar last_spawn_time para que no aparezcan enemigos de golpe
+                    last_spawn_time += (pygame.time.get_ticks() - pause_start_tick)
 
         # ===== opcion de mute (tecla M) =====
         if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
@@ -84,6 +102,10 @@ while running:
                 bullets = []
                 score.score = 0
                 score.write()
+                
+                # Resetear pausa y mute si es necesario (opcional)
+                paused = False
+                pygame.mixer.music.unpause()
 
                 # 2. Resetear jugador y banderas de movimiento (CORRECCION BUG)
                 player.x = 400
@@ -97,8 +119,10 @@ while running:
                 start_time_ms = pygame.time.get_ticks()
                 last_spawn_time = pygame.time.get_ticks()
                 elapsed_time_sec = 0
+                total_paused_time = 0
        
-        if not game_over:
+        # Solo procesar input de movimiento/disparo si NO está pausado
+        if not game_over and not paused:
             player.handle_movement(event)
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -132,81 +156,83 @@ while running:
         continue
     
 
+    # ===== UPDATE LOOP (Solo si no está en pausa) =====
+    if not paused:
+        #dificultad dinámica
+        current_time = pygame.time.get_ticks()
+        puntos = score.score
 
-    #dificultad dinámica
-    current_time = pygame.time.get_ticks()
-    puntos = score.score
+        max_enemigos = min(10, 4 + puntos // 2)
+        current_interval = max(600, ENEMY_SPAWN_INTERVAL - puntos * 120)
+        speed_factor = 1.0 + (puntos // 3) * 0.25
+    
+        if len(enemies) < max_enemigos and current_time - last_spawn_time > current_interval:
+            enemies.append(Enemy(speed_factor=speed_factor))
+            last_spawn_time = current_time
 
-    max_enemigos = min(10, 4 + puntos // 2)
-    current_interval = max(600, ENEMY_SPAWN_INTERVAL - puntos * 120)
-    speed_factor = 1.0 + (puntos // 3) * 0.25
-   
+        for enemy in enemies[:]:
+            enemy.update()
+            if enemy.y > SCREEN_HEIGHT:
+                enemies.remove(enemy)
+
+        player.update()
+
+        # Actualizar balas
+        for bullet in bullets[:]:
+            bullet.update(SCREEN_HEIGHT)
+            if not bullet.visible:
+                bullets.remove(bullet)
+                continue
+
+        # ===== mejor colisión bala-enemigo =====
+        for bullet in bullets[:]:
+            if not bullet.visible:
+                continue
+
+            bullet_rect = pygame.Rect(int(bullet.x), int(bullet.y),
+                                    bullet.image.get_width(), bullet.image.get_height())
+
+            for enemy in enemies[:]:
+                enemy_rect = pygame.Rect(int(enemy.x), int(enemy.y),
+                                        enemy.width, enemy.height)
+
+                if bullet_rect.colliderect(enemy_rect):
+                    bullets.remove(bullet)
+                    enemies.remove(enemy)
+                    if explosion_sound:
+                        explosion_sound.play()
+                    score.add()
+                    break
+    
+        # ===== colision enemigo-jugador (GAME OVER) =====
+        player_rect = pygame.Rect(int(player.x), int(player.y), player.size, player.size)
+
+        for enemy in enemies:
+            enemy_rect = pygame.Rect(int(enemy.x), int(enemy.y), enemy.width, enemy.height)
+
+            if enemy_rect.colliderect(player_rect):
+                if explosion_sound:
+                    explosion_sound.play()
+                    health_bar.lose_health()
+                    enemies.remove(enemy)
+                if not health_bar.is_alive():
+                    # Calcular tiempo final descontando pausas
+                    elapsed_time_sec = (pygame.time.get_ticks() - start_time_ms - total_paused_time) // 1000
+                    game_over = True
+                else:
+                    player.reset_position()
+                break
 
 
-    if len(enemies) < max_enemigos and current_time - last_spawn_time > current_interval:
-        enemies.append(Enemy(speed_factor=speed_factor))
-        last_spawn_time = current_time
-
-    for enemy in enemies[:]:
-        enemy.update()
-        if enemy.y > SCREEN_HEIGHT:
-            enemies.remove(enemy)
-
-    player.update()
-
+    # ===== DRAW LOOP (Siempre se ejecuta) =====
     screen.fill((0, 0, 0))
 
     for enemy in enemies:
         enemy.draw(screen)
 
-    for bullet in bullets[:]:
-        bullet.update(SCREEN_HEIGHT)
-        if not bullet.visible:
-            bullets.remove(bullet)
-            continue
-        bullet.draw(screen)
-
-    # ===== mejor colisión bala-enemigo =====
-    for bullet in bullets[:]:
-        if not bullet.visible:
-            continue
-
-        bullet_rect = pygame.Rect(int(bullet.x), int(bullet.y),
-                                  bullet.image.get_width(), bullet.image.get_height())
-
-        for enemy in enemies[:]:
-            enemy_rect = pygame.Rect(int(enemy.x), int(enemy.y),
-                                     enemy.width, enemy.height)
-
-            if bullet_rect.colliderect(enemy_rect):
-                bullets.remove(bullet)
-                enemies.remove(enemy)
-                if explosion_sound:
-                    explosion_sound.play()
-                score.add()
-                break
-  
-
-
-    # ===== colision enemigo-jugador (GAME OVER) =====
-    player_rect = pygame.Rect(int(player.x), int(player.y), player.size, player.size)
-
-    for enemy in enemies:
-        enemy_rect = pygame.Rect(int(enemy.x), int(enemy.y), enemy.width, enemy.height)
-
-        if enemy_rect.colliderect(player_rect):
-            if explosion_sound:
-                explosion_sound.play()
-                health_bar.lose_health()
-                enemies.remove(enemy)
-            if not health_bar.is_alive():
-                elapsed_time_sec = (pygame.time.get_ticks() - start_time_ms) // 1000
-                game_over = True
-            else:
-                player.reset_position()
-            break
-  
-
+    for bullet in bullets:
+        if bullet.visible: # Solo dibujar si es visible
+            bullet.draw(screen)
 
     player.draw(screen)
     score.draw()
@@ -215,6 +241,15 @@ while running:
     if muted:
         mute_text = font_small.render("MUTE", True, (150, 150, 150))
         screen.blit(mute_text, (SCREEN_WIDTH - 60, 10))
+
+    # Dibujar overlay de PAUSA
+    if paused:
+        # Fondo semitransparente
+        pause_text = font_big.render("PAUSA", True, (255, 255, 0)) # Amarillo
+        screen.blit(pause_text, (SCREEN_WIDTH // 2 - pause_text.get_width() // 2, SCREEN_HEIGHT // 2 - 30))
+        
+        pause_hint = font_small.render("Presiona P para continuar", True, (200, 200, 200))
+        screen.blit(pause_hint, (SCREEN_WIDTH // 2 - pause_hint.get_width() // 2, SCREEN_HEIGHT // 2 + 30))
 
     pygame.display.flip()
     clock.tick(FPS)
