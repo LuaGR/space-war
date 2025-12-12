@@ -24,6 +24,19 @@ pygame.display.set_caption(TITLE)
 score = Score(screen)
 health_bar = Health_Bar(screen)
 
+# =====================================================
+# === NUEVO: Carga de la imagen de fondo ===
+# =====================================================
+background_img = None
+try:
+    # Nota: Asegúrate de que la carpeta sea 'assets/image' o 'assets/images' según donde guardaste la foto
+    background_img = pygame.image.load("assets/image/Fondo_meme_palacio_de_gobierno.png")
+    background_img = pygame.transform.scale(background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+except Exception as e:
+    print(f"No se pudo cargar el fondo: {e}")
+    background_img = None 
+# =====================================================
+
 try:
     laser_sound = pygame.mixer.Sound("assets/sounds/lazer-gun-432285.wav")
     explosion_sound = pygame.mixer.Sound("assets/sounds/explosion-under-snow-sfx-230505.wav")
@@ -32,7 +45,7 @@ except:
     explosion_sound = None
 
 try:
-    pygame.mixer.music.load("assets/sounds/game-music-loop-7-145285.wav")
+    pygame.mixer.music.load("assets/sounds/Triciclo Perú.wav")
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
 except:
@@ -55,7 +68,6 @@ pause_start_tick = 0
 font_big = pygame.font.Font(None, 64)
 font_med = pygame.font.Font(None, 36)
 font_small = pygame.font.Font(None, 24)
-
 
 
 running = True
@@ -103,6 +115,10 @@ while running:
                 score.score = 0
                 score.write()
                 
+                # --- AQUÍ ESTÁ EL ARREGLO ---
+                health_bar.reset_health()
+                # ----------------------------
+
                 # Resetear pausa y mute si es necesario (opcional)
                 paused = False
                 pygame.mixer.music.unpause()
@@ -139,6 +155,8 @@ while running:
 
     # ===== pantalla de game over =====
     if game_over:
+        # En Game Over también podrías querer dibujar el fondo, pero a veces es mejor negro
+        # para que se lea el texto. Lo dejamos en negro por claridad.
         screen.fill((0, 0, 0))
 
         text_game_over = font_big.render("JUEGO TERMINADO", True, (255, 0, 0))
@@ -225,7 +243,13 @@ while running:
 
 
     # ===== DRAW LOOP (Siempre se ejecuta) =====
-    screen.fill((0, 0, 0))
+    
+    # === MODIFICADO: DIBUJAR FONDO ===
+    if background_img:
+        screen.blit(background_img, (0, 0))
+    else:
+        screen.fill((0, 0, 0)) # Fallback a negro si no hay imagen
+    # =================================
 
     for enemy in enemies:
         enemy.draw(screen)
@@ -245,7 +269,7 @@ while running:
     # Dibujar overlay de PAUSA
     if paused:
         # Fondo semitransparente
-        pause_text = font_big.render("PAUSA", True, (255, 255, 0)) # Amarillo
+        pause_text = font_big.render("PAUSA", True, (0, 0, 0)) # Amarillo
         screen.blit(pause_text, (SCREEN_WIDTH // 2 - pause_text.get_width() // 2, SCREEN_HEIGHT // 2 - 30))
         
         pause_hint = font_small.render("Presiona P para continuar", True, (200, 200, 200))
