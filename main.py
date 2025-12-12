@@ -24,18 +24,14 @@ pygame.display.set_caption(TITLE)
 score = Score(screen)
 health_bar = Health_Bar(screen)
 
-# =====================================================
-# === NUEVO: Carga de la imagen de fondo ===
-# =====================================================
+# === Carga de la imagen de fondo ===
 background_img = None
 try:
-    # Nota: Asegúrate de que la carpeta sea 'assets/image' o 'assets/images' según donde guardaste la foto
     background_img = pygame.image.load("assets/image/Fondo_meme_palacio_de_gobierno.png")
     background_img = pygame.transform.scale(background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
 except Exception as e:
     print(f"No se pudo cargar el fondo: {e}")
     background_img = None 
-# =====================================================
 
 try:
     laser_sound = pygame.mixer.Sound("assets/sounds/lazer-gun-432285.wav")
@@ -54,14 +50,12 @@ except:
 clock = pygame.time.Clock()
 player = Player(shoot_sound=laser_sound)
 
-
 game_over = False
-muted = False # Variable para controlar el estado del silencio
-paused = False # Variable para controlar el estado de pausa
+muted = False
+paused = False
 
 start_time_ms = pygame.time.get_ticks()
 elapsed_time_sec = 0
-# Variable para compensar el tiempo que el juego estuvo en pausa
 total_paused_time = 0
 pause_start_tick = 0
 
@@ -79,16 +73,14 @@ while running:
 
         # ===== Opción de PAUSA (tecla P) =====
         if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-            if not game_over: # Solo pausar si el juego está activo
+            if not game_over:
                 paused = not paused
                 if paused:
                     pygame.mixer.music.pause()
-                    pause_start_tick = pygame.time.get_ticks() # Guardar cuando empezó la pausa
+                    pause_start_tick = pygame.time.get_ticks()
                 else:
                     pygame.mixer.music.unpause()
-                    # Sumar el tiempo que estuvo pausado para no afectar el cronómetro
                     total_paused_time += (pygame.time.get_ticks() - pause_start_tick) 
-                    # Ajustar last_spawn_time para que no aparezcan enemigos de golpe
                     last_spawn_time += (pygame.time.get_ticks() - pause_start_tick)
 
         # ===== opcion de mute (tecla M) =====
@@ -115,9 +107,7 @@ while running:
                 score.score = 0
                 score.write()
                 
-                # --- AQUÍ ESTÁ EL ARREGLO ---
                 health_bar.reset_health()
-                # ----------------------------
 
                 # Resetear pausa y mute si es necesario (opcional)
                 paused = False
@@ -136,8 +126,7 @@ while running:
                 last_spawn_time = pygame.time.get_ticks()
                 elapsed_time_sec = 0
                 total_paused_time = 0
-       
-        # Solo procesar input de movimiento/disparo si NO está pausado
+
         if not game_over and not paused:
             player.handle_movement(event)
 
@@ -150,13 +139,9 @@ while running:
 
                 bullet.shoot(bullet_x, bullet_y)
                 bullets.append(bullet)
-        
-
 
     # ===== pantalla de game over =====
     if game_over:
-        # En Game Over también podrías querer dibujar el fondo, pero a veces es mejor negro
-        # para que se lea el texto. Lo dejamos en negro por claridad.
         screen.fill((0, 0, 0))
 
         text_game_over = font_big.render("JUEGO TERMINADO", True, (255, 0, 0))
@@ -202,7 +187,7 @@ while running:
                 bullets.remove(bullet)
                 continue
 
-        # ===== mejor colisión bala-enemigo =====
+        # ===== colisión bala-enemigo =====
         for bullet in bullets[:]:
             if not bullet.visible:
                 continue
@@ -234,7 +219,6 @@ while running:
                     health_bar.lose_health()
                     enemies.remove(enemy)
                 if not health_bar.is_alive():
-                    # Calcular tiempo final descontando pausas
                     elapsed_time_sec = (pygame.time.get_ticks() - start_time_ms - total_paused_time) // 1000
                     game_over = True
                 else:
@@ -244,18 +228,17 @@ while running:
 
     # ===== DRAW LOOP (Siempre se ejecuta) =====
     
-    # === MODIFICADO: DIBUJAR FONDO ===
+    # === DIBUJAR FONDO ===
     if background_img:
         screen.blit(background_img, (0, 0))
     else:
-        screen.fill((0, 0, 0)) # Fallback a negro si no hay imagen
-    # =================================
+        screen.fill((0, 0, 0))
 
     for enemy in enemies:
         enemy.draw(screen)
 
     for bullet in bullets:
-        if bullet.visible: # Solo dibujar si es visible
+        if bullet.visible:
             bullet.draw(screen)
 
     player.draw(screen)
@@ -268,8 +251,7 @@ while running:
 
     # Dibujar overlay de PAUSA
     if paused:
-        # Fondo semitransparente
-        pause_text = font_big.render("PAUSA", True, (0, 0, 0)) # Amarillo
+        pause_text = font_big.render("PAUSA", True, (0, 0, 0))
         screen.blit(pause_text, (SCREEN_WIDTH // 2 - pause_text.get_width() // 2, SCREEN_HEIGHT // 2 - 30))
         
         pause_hint = font_small.render("Presiona P para continuar", True, (200, 200, 200))
