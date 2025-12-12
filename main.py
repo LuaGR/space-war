@@ -8,7 +8,7 @@ from game.enemy import Enemy
 from game.score import Score
 from game.healthbar import Health_Bar
 
-TITLE = "Space War"
+TITLE = "La Venganza de la Paloma"
 FPS = 60
 ENEMY_SPAWN_INTERVAL = 2000
 
