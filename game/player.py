@@ -74,16 +74,13 @@ class Player:
         if self.move_down:
             self.y += self.speed
 
-        # === CORRECCIÓN DE LÍMITES ===
         if self.x < 0:
             self.x = 0
-        # Usamos size_width para el limite derecho
         elif self.x > self.screen_width - self.size_width:
             self.x = self.screen_width - self.size_width
 
         if self.y < 0:
             self.y = 0
-        # Usamos size_height para el limite inferior
         elif self.y > self.screen_height - self.size_height:
             self.y = self.screen_height - self.size_height
 
@@ -91,7 +88,6 @@ class Player:
         if self.image:
             screen.blit(self.image, (self.x, self.y))
         else:
-            # Dibujar rectángulo con las dimensiones correctas si no hay imagen
             pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.size_width, self.size_height))
 
     def shoot(self):
